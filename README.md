@@ -1,6 +1,6 @@
 # Nmap Practice Kit
 
-Robust, hands-on Nmap practice suite with more than 350 focused scan profiles,
+Robust, hands-on Nmap practice suite with 358 focused scan profiles,
 cross-platform workflow tools, an isolated local lab, XML reporting, batch runs,
 bounded monitoring, and change comparison.
 
@@ -52,7 +52,8 @@ Scan output goes to `results/` in normal, grepable, and XML formats.
 
 ## Script collection
 
-Suite contains 350+ one-purpose profile scripts plus flexible scanners and
+Suite contains 358 registry-backed one-purpose profiles, 366 scan entry scripts,
+flexible scanners, and
 workflow utilities. Profiles cover:
 
 - Target listing, ARP, ICMP, TCP, UDP, SCTP, IPv6, and combined discovery
@@ -71,7 +72,8 @@ python3 scripts/scan_tls_certificate.py 127.0.0.1 --dry-run
 ```
 
 Every profile accepts `--help`, `--dry-run`, `--output`, `--timing`, `--no-dns`,
-and verbosity options. Examples:
+`--skip-host-discovery`, `--extra-arg`, and verbosity options. Profiles with
+default ports accept `--ports`; NSE profiles accept `--script-args`. Examples:
 
 ```bash
 python3 scripts/scan_ports.py --help
@@ -88,7 +90,7 @@ Workflow/report tools:
 | `profile_catalog.py` | Search/filter every validated profile |
 | `batch_profile.py` | Run one profile against authorized target file |
 | `watch_profile.py` | Repeat bounded runs and report changes |
-| `rescan_open_ports.py` | Build focused service rescan from XML |
+| `rescan_open_ports.py` | Build focused TCP/UDP service rescans from XML |
 | `compare_results.py` | Compare two Nmap XML reports |
 | `report_summary.py` | Human-readable XML summary |
 | `report_json.py` / `report_csv.py` | Export structured results |
@@ -105,6 +107,14 @@ Workflow/report tools:
 - [Script guide](docs/script-guide.md): what every script does and how to modify it
 - [Command cheat sheet](docs/cheatsheet.md): options and output meanings
 - [Safety rules](docs/safety.md): scope, permissions, and low-impact practice
+
+Recommended reading order:
+
+1. Safety rules.
+2. Progressive Labs 0–3.
+3. Profile catalog for chosen protocol.
+4. Workflow guide for saved results and automation.
+5. Script guide before modifying registry or adding profiles.
 
 Use a small private subnet you control. Avoid `-T5`, full port ranges, brute-force
 scripts, vulnerability scripts, and OS detection until you understand their

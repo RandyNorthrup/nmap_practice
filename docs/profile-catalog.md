@@ -1,20 +1,22 @@
-# Profile catalog
+# Complete profile catalog
 
-Generated from validated registry. Each row maps to one executable Python script
-in `scripts/`. All profile scripts support `--help`, `--dry-run`, `--output`,
-timing, DNS control, and shared target guardrails.
+Generated from live registry. Contains **358 profiles**. Each script
+accepts shared options documented in [script guide](script-guide.md). Use
+`profile_catalog.py` for interactive search and filtering.
 
-Profiles: **358**. Standalone lab, reporting, batch, watch, comparison,
-and flexible scanners are additional.
+```bash
+python3 scripts/profile_catalog.py --search tls
+python3 scripts/profile_catalog.py --category discovery --risk low
+```
 
 ## Risk and scope
 
-- `low`: bounded discovery or metadata collection.
-- `medium`: raw packets, broader probes, or service-specific enumeration.
-- `high`: locked to loopback practice by engine.
-- `authorized`: private targets work directly; public targets need explicit opt-in.
-- `private`: cannot be unlocked for public targets.
-- `loopback`: only localhost, 127.0.0.0/8, or ::1.
+- `low`: narrow discovery or information retrieval.
+- `medium`: broader, raw-packet, enumeration, or higher-traffic behavior.
+- `high`: loopback-only experiments enforced by runner.
+- `authorized`: private targets work directly; public/unresolved targets need explicit opt-in.
+- `private`: only private, link-local, or loopback targets.
+- `loopback`: only localhost, `127.0.0.0/8`, or `::1`.
 
 ## data (14)
 
@@ -66,44 +68,44 @@ and flexible scanners are additional.
 
 | Script | Purpose | Risk | Scope | Elevated | Default ports | Core flags |
 |---|---|---|---|---|---|---|
-| `scan_discover_ack.py` | ACK discovery | low | private | yes | `—` | `-sn -PA22,80,443` |
-| `scan_discover_arp.py` | ARP discovery | low | private | yes | `—` | `-sn -PR` |
-| `scan_discover_default.py` | Default discovery | low | private | no | `—` | `-sn` |
-| `scan_discover_icmp_combo.py` | Combined ICMP discovery | low | private | yes | `—` | `-sn -PE -PP -PM` |
-| `scan_discover_icmp_echo.py` | ICMP echo discovery | low | private | yes | `—` | `-sn -PE` |
-| `scan_discover_icmp_mask.py` | ICMP mask discovery | low | private | yes | `—` | `-sn -PM` |
-| `scan_discover_icmp_timestamp.py` | ICMP timestamp discovery | low | private | yes | `—` | `-sn -PP` |
-| `scan_discover_ip_protocol.py` | IP protocol discovery | low | private | yes | `—` | `-sn -PO1,2,4` |
-| `scan_discover_ipv6.py` | IPv6 discovery | low | authorized | no | `—` | `-6 -sn` |
-| `scan_discover_no_dns.py` | Discovery without DNS | low | private | no | `—` | `-sn -n` |
-| `scan_discover_sctp.py` | SCTP discovery | low | private | yes | `—` | `-sn -PY80,2905` |
-| `scan_discover_syn_common.py` | Common-port SYN discovery | low | private | yes | `—` | `-sn -PS22,80,443` |
-| `scan_discover_syn_web.py` | Web-port SYN discovery | low | private | yes | `—` | `-sn -PS80,443,8000,8080,8443` |
-| `scan_discover_traceroute.py` | Discovery traceroute | low | authorized | no | `—` | `-sn --traceroute` |
-| `scan_discover_udp.py` | UDP discovery | low | private | yes | `—` | `-sn -PU53,123,161` |
-| `scan_discover_verbose.py` | Verbose discovery | low | private | no | `—` | `-sn -vv --reason` |
-| `scan_discovery_arp.py` | ARP discovery | low | private | yes | `—` | `-sn -PR --reason` |
-| `scan_discovery_combined.py` | Combined host discovery | medium | authorized | yes | `—` | `-sn -PE -PS22,80,443 -PA80,443 -PU53,123 --reason` |
-| `scan_discovery_default_profile.py` | Default host discovery | low | authorized | no | `—` | `-sn --reason` |
-| `scan_discovery_fast_private.py` | Faster private discovery | medium | private | no | `—` | `-sn --reason` |
-| `scan_discovery_force_dns.py` | Host discovery with DNS | low | authorized | no | `—` | `-sn -R --reason` |
-| `scan_discovery_icmp_echo.py` | ICMP echo discovery | low | authorized | yes | `—` | `-sn -PE --reason` |
-| `scan_discovery_icmp_netmask.py` | ICMP netmask discovery | low | private | yes | `—` | `-sn -PM --reason` |
-| `scan_discovery_icmp_timestamp.py` | ICMP timestamp discovery | low | authorized | yes | `—` | `-sn -PP --reason` |
-| `scan_discovery_ip_protocols.py` | IP protocol discovery | medium | authorized | yes | `—` | `-sn -PO1,2,4,6,17 --reason` |
-| `scan_discovery_ipv6.py` | IPv6 host discovery | low | authorized | yes | `—` | `-6 -sn --reason` |
-| `scan_discovery_no_dns.py` | Host discovery without DNS | low | authorized | no | `—` | `-sn -n --reason` |
-| `scan_discovery_sctp.py` | SCTP discovery | medium | authorized | yes | `—` | `-sn -PY80,443,3868 --reason` |
-| `scan_discovery_tcp_ack_common.py` | TCP ACK discovery | low | authorized | yes | `—` | `-sn -PA22,80,443 --reason` |
-| `scan_discovery_tcp_syn_common.py` | TCP SYN discovery | low | authorized | yes | `—` | `-sn -PS22,80,443 --reason` |
-| `scan_discovery_tcp_syn_web.py` | Web-port SYN discovery | low | authorized | yes | `—` | `-sn -PS80,443,8000,8080,8443 --reason` |
-| `scan_discovery_traceroute.py` | Discovery with traceroute | low | authorized | no | `—` | `-sn --traceroute --reason` |
-| `scan_discovery_udp_common.py` | UDP discovery | low | authorized | yes | `—` | `-sn -PU53,67,68,123,161 --reason` |
-| `scan_discovery_verbose_reasons.py` | Verbose discovery reasons | low | authorized | no | `—` | `-sn --reason -vv` |
-| `scan_list_targets.py` | List targets | low | private | no | `—` | `-sL` |
-| `scan_list_targets_dns.py` | List targets with DNS | low | private | no | `—` | `-sL -R` |
-| `scan_list_targets_no_dns.py` | List targets without DNS | low | authorized | no | `—` | `-sL -n` |
-| `scan_list_targets_with_dns.py` | List targets with DNS | low | authorized | no | `—` | `-sL -R` |
+| `scan_discover_ack.py` | ACK discovery | low | private | yes | — | `-sn -PA22,80,443` |
+| `scan_discover_arp.py` | ARP discovery | low | private | yes | — | `-sn -PR` |
+| `scan_discover_default.py` | Default discovery | low | private | no | — | `-sn` |
+| `scan_discover_icmp_combo.py` | Combined ICMP discovery | low | private | yes | — | `-sn -PE -PP -PM` |
+| `scan_discover_icmp_echo.py` | ICMP echo discovery | low | private | yes | — | `-sn -PE` |
+| `scan_discover_icmp_mask.py` | ICMP mask discovery | low | private | yes | — | `-sn -PM` |
+| `scan_discover_icmp_timestamp.py` | ICMP timestamp discovery | low | private | yes | — | `-sn -PP` |
+| `scan_discover_ip_protocol.py` | IP protocol discovery | low | private | yes | — | `-sn -PO1,2,4` |
+| `scan_discover_ipv6.py` | IPv6 discovery | low | authorized | no | — | `-6 -sn` |
+| `scan_discover_no_dns.py` | Discovery without DNS | low | private | no | — | `-sn -n` |
+| `scan_discover_sctp.py` | SCTP discovery | low | private | yes | — | `-sn -PY80,2905` |
+| `scan_discover_syn_common.py` | Common-port SYN discovery | low | private | yes | — | `-sn -PS22,80,443` |
+| `scan_discover_syn_web.py` | Web-port SYN discovery | low | private | yes | — | `-sn -PS80,443,8000,8080,8443` |
+| `scan_discover_traceroute.py` | Discovery traceroute | low | authorized | no | — | `-sn --traceroute` |
+| `scan_discover_udp.py` | UDP discovery | low | private | yes | — | `-sn -PU53,123,161` |
+| `scan_discover_verbose.py` | Verbose discovery | low | private | no | — | `-sn -vv --reason` |
+| `scan_discovery_arp.py` | ARP discovery | low | private | yes | — | `-sn -PR --reason` |
+| `scan_discovery_combined.py` | Combined host discovery | medium | authorized | yes | — | `-sn -PE -PS22,80,443 -PA80,443 -PU53,123 --reason` |
+| `scan_discovery_default_profile.py` | Default host discovery | low | authorized | no | — | `-sn --reason` |
+| `scan_discovery_fast_private.py` | Faster private discovery | medium | private | no | — | `-sn --reason` |
+| `scan_discovery_force_dns.py` | Host discovery with DNS | low | authorized | no | — | `-sn -R --reason` |
+| `scan_discovery_icmp_echo.py` | ICMP echo discovery | low | authorized | yes | — | `-sn -PE --reason` |
+| `scan_discovery_icmp_netmask.py` | ICMP netmask discovery | low | private | yes | — | `-sn -PM --reason` |
+| `scan_discovery_icmp_timestamp.py` | ICMP timestamp discovery | low | authorized | yes | — | `-sn -PP --reason` |
+| `scan_discovery_ip_protocols.py` | IP protocol discovery | medium | authorized | yes | — | `-sn -PO1,2,4,6,17 --reason` |
+| `scan_discovery_ipv6.py` | IPv6 host discovery | low | authorized | yes | — | `-6 -sn --reason` |
+| `scan_discovery_no_dns.py` | Host discovery without DNS | low | authorized | no | — | `-sn -n --reason` |
+| `scan_discovery_sctp.py` | SCTP discovery | medium | authorized | yes | — | `-sn -PY80,443,3868 --reason` |
+| `scan_discovery_tcp_ack_common.py` | TCP ACK discovery | low | authorized | yes | — | `-sn -PA22,80,443 --reason` |
+| `scan_discovery_tcp_syn_common.py` | TCP SYN discovery | low | authorized | yes | — | `-sn -PS22,80,443 --reason` |
+| `scan_discovery_tcp_syn_web.py` | Web-port SYN discovery | low | authorized | yes | — | `-sn -PS80,443,8000,8080,8443 --reason` |
+| `scan_discovery_traceroute.py` | Discovery with traceroute | low | authorized | no | — | `-sn --traceroute --reason` |
+| `scan_discovery_udp_common.py` | UDP discovery | low | authorized | yes | — | `-sn -PU53,67,68,123,161 --reason` |
+| `scan_discovery_verbose_reasons.py` | Verbose discovery reasons | low | authorized | no | — | `-sn --reason -vv` |
+| `scan_list_targets.py` | List targets | low | private | no | — | `-sL` |
+| `scan_list_targets_dns.py` | List targets with DNS | low | private | no | — | `-sL -R` |
+| `scan_list_targets_no_dns.py` | List targets without DNS | low | authorized | no | — | `-sL -n` |
+| `scan_list_targets_with_dns.py` | List targets with DNS | low | authorized | no | — | `-sL -R` |
 
 ## dns (7)
 
@@ -266,9 +268,9 @@ and flexible scanners are additional.
 | `scan_nse_version_profile.py` | Version NSE suite | medium | authorized | no | `22,80,443,8000,9000` | `-sT -sV --version-light --script version --script-timeout 30s --open` |
 | `scan_nse_vuln_loopback.py` | Vulnerability NSE loopback | high | loopback | no | `2222,8000,9000` | `-sT -sV --script vuln --script-timeout 60s --open` |
 | `scan_path_mtu.py` | Path MTU discovery | low | authorized | no | `22,80,443` | `-sT -sV --version-light --script path-mtu --script-timeout 30s --open` |
-| `scan_scripts_default.py` | Default NSE | medium | authorized | no | `—` | `-sT -sV --script default --top-ports 100` |
-| `scan_scripts_default_safe.py` | Default and safe NSE | low | authorized | no | `—` | `-sT -sV --script default and safe --top-ports 100` |
-| `scan_scripts_safe.py` | Safe NSE | medium | authorized | no | `—` | `-sT -sV --script safe --top-ports 100` |
+| `scan_scripts_default.py` | Default NSE | medium | authorized | no | — | `-sT -sV --script default --top-ports 100` |
+| `scan_scripts_default_safe.py` | Default and safe NSE | low | authorized | no | — | `-sT -sV --script default and safe --top-ports 100` |
+| `scan_scripts_safe.py` | Safe NSE | medium | authorized | no | — | `-sT -sV --script safe --top-ports 100` |
 
 ## remote (18)
 
@@ -282,12 +284,12 @@ and flexible scanners are additional.
 | `scan_rdp_encryption.py` | RDP encryption | low | authorized | no | `3389` | `-sT -sV --version-light --script rdp-enum-encryption --script-timeout 30s --open` |
 | `scan_rdp_ntlm.py` | RDP NTLM metadata | low | authorized | no | `3389` | `-sT -sV --version-light --script rdp-ntlm-info --script-timeout 30s --open` |
 | `scan_rpcinfo.py` | RPC program listing | low | authorized | no | `111` | `-sT -sV --version-light --script rpcinfo --script-timeout 30s --open` |
-| `scan_smb_os.py` | SMB OS discovery | low | authorized | no | `139,445` | `-sT -sV --version-light --script smb-os-discovery --script-timeout 30s --open` |
-| `scan_smb_shares.py` | SMB shares | medium | private | no | `139,445` | `-sT -sV --version-light --script smb-enum-shares --script-timeout 30s --open` |
-| `scan_smb_users.py` | SMB users | medium | private | no | `139,445` | `-sT -sV --version-light --script smb-enum-users --script-timeout 30s --open` |
 | `scan_smb2_capabilities.py` | SMB2 capabilities | low | authorized | no | `445` | `-sT -sV --version-light --script smb2-capabilities --script-timeout 30s --open` |
 | `scan_smb2_security_mode.py` | SMB2 security mode | low | authorized | no | `445` | `-sT -sV --version-light --script smb2-security-mode --script-timeout 30s --open` |
 | `scan_smb2_time.py` | SMB2 server time | low | authorized | no | `445` | `-sT -sV --version-light --script smb2-time --script-timeout 30s --open` |
+| `scan_smb_os.py` | SMB OS discovery | low | authorized | no | `139,445` | `-sT -sV --version-light --script smb-os-discovery --script-timeout 30s --open` |
+| `scan_smb_shares.py` | SMB shares | medium | private | no | `139,445` | `-sT -sV --version-light --script smb-enum-shares --script-timeout 30s --open` |
+| `scan_smb_users.py` | SMB users | medium | private | no | `139,445` | `-sT -sV --version-light --script smb-enum-users --script-timeout 30s --open` |
 | `scan_smtp_ntlm.py` | SMTP NTLM metadata | low | authorized | no | `25,465,587` | `-sT -sV --version-light --script smtp-ntlm-info --script-timeout 30s --open` |
 | `scan_ssh_algorithms.py` | SSH algorithms | low | authorized | no | `22,2222` | `-sT -sV --version-light --script ssh2-enum-algos --script-timeout 30s --open` |
 | `scan_ssh_host_keys.py` | SSH host keys | low | authorized | no | `22,2222` | `-sT -sV --version-light --script ssh-hostkey --script-timeout 30s --open` |
@@ -299,18 +301,18 @@ and flexible scanners are additional.
 |---|---|---|---|---|---|---|
 | `scan_aggressive_loopback.py` | Aggressive loopback profile | high | loopback | yes | `2222,8000,9000` | `-A --reason` |
 | `scan_banner_grab.py` | Generic banner collection | low | authorized | no | `21,22,23,25,80,110,143,443,8000,9000` | `-sT -sV --version-light --script banner --script-timeout 30s --open` |
-| `scan_os_fingerprint.py` | OS fingerprint | medium | authorized | yes | `—` | `-O --osscan-limit --max-os-tries 1 --top-ports 1000` |
-| `scan_os_guess.py` | Aggressive OS guess | medium | authorized | yes | `—` | `-O --osscan-guess --max-os-tries 1 --top-ports 1000` |
-| `scan_os_guess_profile.py` | Aggressive OS guessing | medium | authorized | yes | `—` | `-O --osscan-guess --top-ports 1000 --reason` |
-| `scan_os_limited_profile.py` | Limited OS fingerprint | medium | authorized | yes | `—` | `-O --osscan-limit --max-os-tries 1 --top-ports 1000 --reason` |
-| `scan_os_service_combo.py` | OS and service inventory | medium | authorized | yes | `—` | `-O -sV --version-light --top-ports 1000 --reason --open` |
-| `scan_os_standard_profile.py` | Standard OS fingerprint | medium | authorized | yes | `—` | `-O --top-ports 1000 --reason` |
+| `scan_os_fingerprint.py` | OS fingerprint | medium | authorized | yes | — | `-O --osscan-limit --max-os-tries 1 --top-ports 1000` |
+| `scan_os_guess.py` | Aggressive OS guess | medium | authorized | yes | — | `-O --osscan-guess --max-os-tries 1 --top-ports 1000` |
+| `scan_os_guess_profile.py` | Aggressive OS guessing | medium | authorized | yes | — | `-O --osscan-guess --top-ports 1000 --reason` |
+| `scan_os_limited_profile.py` | Limited OS fingerprint | medium | authorized | yes | — | `-O --osscan-limit --max-os-tries 1 --top-ports 1000 --reason` |
+| `scan_os_service_combo.py` | OS and service inventory | medium | authorized | yes | — | `-O -sV --version-light --top-ports 1000 --reason --open` |
+| `scan_os_standard_profile.py` | Standard OS fingerprint | medium | authorized | yes | — | `-O --top-ports 1000 --reason` |
 | `scan_rpc.py` | RPC service scan | medium | authorized | no | `111,135,593,2049` | `-sT -sV -sR` |
 | `scan_rpc_services.py` | RPC service scan | medium | authorized | no | `111,2049,32768-32775` | `-sT -sR --reason --open` |
-| `scan_service_all.py` | Full service detection | medium | authorized | no | `—` | `-sT -sV --version-all --top-ports 100` |
+| `scan_service_all.py` | Full service detection | medium | authorized | no | — | `-sT -sV --version-all --top-ports 100` |
 | `scan_service_banner.py` | Generic banners | low | authorized | no | `21,22,25,80,110,143,443,8000,9000` | `-sT -sV --script banner` |
-| `scan_service_default.py` | Default service detection | low | authorized | no | `—` | `-sT -sV --top-ports 100` |
-| `scan_service_light.py` | Light service detection | low | authorized | no | `—` | `-sT -sV --version-light --top-ports 100` |
+| `scan_service_default.py` | Default service detection | low | authorized | no | — | `-sT -sV --top-ports 100` |
+| `scan_service_light.py` | Light service detection | low | authorized | no | — | `-sT -sV --version-light --top-ports 100` |
 | `scan_version_all_profile.py` | Full version detection | medium | authorized | no | `22,80,443,8000,9000` | `-sT -sV --version-all --reason --open` |
 | `scan_version_allports_lab.py` | Version all-ports override | medium | loopback | no | `2222,8000,9000` | `-sT -sV --allports --version-light --reason --open` |
 | `scan_version_intensity_default.py` | Version intensity 5 | low | authorized | no | `22,80,443,8000,9000` | `-sT -sV --version-intensity 5 --reason --open` |
@@ -353,42 +355,42 @@ and flexible scanners are additional.
 
 | Script | Purpose | Risk | Scope | Elevated | Default ports | Core flags |
 |---|---|---|---|---|---|---|
+| `scan_ssh2_enum_algos.py` | SSH: protocol algorithms | low | authorized | no | `22,2222` | `-sT -sV --version-light --script ssh2-enum-algos --script-timeout 30s --host-timeout 5m --open` |
 | `scan_ssh_auth_methods.py` | SSH: authentication methods | medium | authorized | no | `22,2222` | `-sT -sV --version-light --script ssh-auth-methods --script-timeout 30s --host-timeout 5m --open` |
 | `scan_ssh_hostkey.py` | SSH: host-key fingerprints | low | authorized | no | `22,2222` | `-sT -sV --version-light --script ssh-hostkey --script-timeout 30s --host-timeout 5m --open` |
-| `scan_ssh2_enum_algos.py` | SSH: protocol algorithms | low | authorized | no | `22,2222` | `-sT -sV --version-light --script ssh2-enum-algos --script-timeout 30s --host-timeout 5m --open` |
 | `scan_sshv1.py` | SSH: obsolete protocol v1 support | low | authorized | no | `22,2222` | `-sT -sV --version-light --script sshv1 --script-timeout 30s --host-timeout 5m --open` |
 
 ## tcp (27)
 
 | Script | Purpose | Risk | Scope | Elevated | Default ports | Core flags |
 |---|---|---|---|---|---|---|
-| `scan_tcp_ack_all.py` | Full TCP ACK firewall map | high | loopback | yes | `—` | `-sA -p- --reason` |
-| `scan_tcp_ack_common.py` | TCP ACK firewall map | medium | authorized | yes | `—` | `-sA --top-ports 100 --reason` |
-| `scan_tcp_connect_all.py` | Full TCP connect scan | medium | authorized | no | `—` | `-sT -p- --reason --open` |
-| `scan_tcp_connect_fast.py` | TCP connect fast list | low | authorized | no | `—` | `-sT -F --reason --open` |
-| `scan_tcp_connect_top10.py` | TCP connect top 10 | low | authorized | no | `—` | `-sT --top-ports 10 --reason --open` |
-| `scan_tcp_connect_top100.py` | TCP connect top 100 | low | authorized | no | `—` | `-sT --top-ports 100 --reason --open` |
-| `scan_tcp_connect_top1000.py` | TCP connect top 1000 | low | authorized | no | `—` | `-sT --top-ports 1000 --reason --open` |
-| `scan_tcp_custom_ackrst_lab.py` | Custom ACK/RST flags | high | loopback | yes | `—` | `-sA --scanflags ACKRST --top-ports 100 --reason` |
-| `scan_tcp_custom_synfin_lab.py` | Custom SYN/FIN flags | high | loopback | yes | `—` | `-sS --scanflags SYNFIN --top-ports 100 --reason` |
-| `scan_tcp_data_length_lab.py` | Extra payload TCP lab | high | loopback | yes | `—` | `-sS --data-length 16 --top-ports 100 --reason` |
-| `scan_tcp_defeat_rst_rate_limit.py` | RST rate-limit comparison | medium | private | yes | `—` | `-sS --top-ports 1000 --defeat-rst-ratelimit --reason --open` |
-| `scan_tcp_fin_common.py` | TCP FIN scan | medium | authorized | yes | `—` | `-sF --top-ports 100 --reason` |
-| `scan_tcp_fragment_lab.py` | Fragmented SYN lab | high | loopback | yes | `—` | `-sS -f --top-ports 100 --reason` |
-| `scan_tcp_host_timeout.py` | Bounded TCP scan | low | authorized | no | `—` | `-sT --top-ports 1000 --host-timeout 30s --reason --open` |
-| `scan_tcp_low_retries.py` | Low-retry TCP scan | medium | private | no | `—` | `-sT --top-ports 100 --max-retries 1 --reason --open` |
-| `scan_tcp_maimon_common.py` | TCP Maimon scan | medium | authorized | yes | `—` | `-sM --top-ports 100 --reason` |
-| `scan_tcp_mtu24_lab.py` | Custom MTU SYN lab | high | loopback | yes | `—` | `-sS --mtu 24 --top-ports 100 --reason` |
-| `scan_tcp_null_common.py` | TCP null scan | medium | authorized | yes | `—` | `-sN --top-ports 100 --reason` |
-| `scan_tcp_open_only_1000.py` | Open-only TCP top 1000 | low | authorized | no | `—` | `-sT --top-ports 1000 --reason --open` |
+| `scan_tcp_ack_all.py` | Full TCP ACK firewall map | high | loopback | yes | — | `-sA -p- --reason` |
+| `scan_tcp_ack_common.py` | TCP ACK firewall map | medium | authorized | yes | — | `-sA --top-ports 100 --reason` |
+| `scan_tcp_connect_all.py` | Full TCP connect scan | medium | authorized | no | — | `-sT -p- --reason --open` |
+| `scan_tcp_connect_fast.py` | TCP connect fast list | low | authorized | no | — | `-sT -F --reason --open` |
+| `scan_tcp_connect_top10.py` | TCP connect top 10 | low | authorized | no | — | `-sT --top-ports 10 --reason --open` |
+| `scan_tcp_connect_top100.py` | TCP connect top 100 | low | authorized | no | — | `-sT --top-ports 100 --reason --open` |
+| `scan_tcp_connect_top1000.py` | TCP connect top 1000 | low | authorized | no | — | `-sT --top-ports 1000 --reason --open` |
+| `scan_tcp_custom_ackrst_lab.py` | Custom ACK/RST flags | high | loopback | yes | — | `-sA --scanflags ACKRST --top-ports 100 --reason` |
+| `scan_tcp_custom_synfin_lab.py` | Custom SYN/FIN flags | high | loopback | yes | — | `-sS --scanflags SYNFIN --top-ports 100 --reason` |
+| `scan_tcp_data_length_lab.py` | Extra payload TCP lab | high | loopback | yes | — | `-sS --data-length 16 --top-ports 100 --reason` |
+| `scan_tcp_defeat_rst_rate_limit.py` | RST rate-limit comparison | medium | private | yes | — | `-sS --top-ports 1000 --defeat-rst-ratelimit --reason --open` |
+| `scan_tcp_fin_common.py` | TCP FIN scan | medium | authorized | yes | — | `-sF --top-ports 100 --reason` |
+| `scan_tcp_fragment_lab.py` | Fragmented SYN lab | high | loopback | yes | — | `-sS -f --top-ports 100 --reason` |
+| `scan_tcp_host_timeout.py` | Bounded TCP scan | low | authorized | no | — | `-sT --top-ports 1000 --host-timeout 30s --reason --open` |
+| `scan_tcp_low_retries.py` | Low-retry TCP scan | medium | private | no | — | `-sT --top-ports 100 --max-retries 1 --reason --open` |
+| `scan_tcp_maimon_common.py` | TCP Maimon scan | medium | authorized | yes | — | `-sM --top-ports 100 --reason` |
+| `scan_tcp_mtu24_lab.py` | Custom MTU SYN lab | high | loopback | yes | — | `-sS --mtu 24 --top-ports 100 --reason` |
+| `scan_tcp_null_common.py` | TCP null scan | medium | authorized | yes | — | `-sN --top-ports 100 --reason` |
+| `scan_tcp_open_only_1000.py` | Open-only TCP top 1000 | low | authorized | no | — | `-sT --top-ports 1000 --reason --open` |
 | `scan_tcp_packet_trace_lab.py` | TCP packet trace | high | loopback | no | `8000` | `-sT --packet-trace --reason` |
-| `scan_tcp_syn_all.py` | Full TCP SYN scan | medium | authorized | yes | `—` | `-sS -p- --reason --open` |
-| `scan_tcp_syn_top10.py` | TCP SYN top 10 | medium | authorized | yes | `—` | `-sS --top-ports 10 --reason --open` |
-| `scan_tcp_syn_top100.py` | TCP SYN top 100 | medium | authorized | yes | `—` | `-sS --top-ports 100 --reason --open` |
-| `scan_tcp_syn_top1000.py` | TCP SYN top 1000 | medium | authorized | yes | `—` | `-sS --top-ports 1000 --reason --open` |
-| `scan_tcp_window_common.py` | TCP window scan | medium | authorized | yes | `—` | `-sW --top-ports 100 --reason` |
-| `scan_tcp_without_discovery.py` | TCP scan without discovery | low | authorized | no | `—` | `-Pn -sT --top-ports 100 --reason --open` |
-| `scan_tcp_xmas_common.py` | TCP Xmas scan | medium | authorized | yes | `—` | `-sX --top-ports 100 --reason` |
+| `scan_tcp_syn_all.py` | Full TCP SYN scan | medium | authorized | yes | — | `-sS -p- --reason --open` |
+| `scan_tcp_syn_top10.py` | TCP SYN top 10 | medium | authorized | yes | — | `-sS --top-ports 10 --reason --open` |
+| `scan_tcp_syn_top100.py` | TCP SYN top 100 | medium | authorized | yes | — | `-sS --top-ports 100 --reason --open` |
+| `scan_tcp_syn_top1000.py` | TCP SYN top 1000 | medium | authorized | yes | — | `-sS --top-ports 1000 --reason --open` |
+| `scan_tcp_window_common.py` | TCP window scan | medium | authorized | yes | — | `-sW --top-ports 100 --reason` |
+| `scan_tcp_without_discovery.py` | TCP scan without discovery | low | authorized | no | — | `-Pn -sT --top-ports 100 --reason --open` |
+| `scan_tcp_xmas_common.py` | TCP Xmas scan | medium | authorized | yes | — | `-sX --top-ports 100 --reason` |
 
 ## tls (14)
 
@@ -413,8 +415,8 @@ and flexible scanners are additional.
 
 | Script | Purpose | Risk | Scope | Elevated | Default ports | Core flags |
 |---|---|---|---|---|---|---|
-| `scan_ip_protocols.py` | IP protocols | medium | authorized | yes | `—` | `-sO` |
-| `scan_mixed_tcp_udp.py` | Mixed TCP and UDP | medium | authorized | yes | `—` | `-sT -sU -p T:22,80,443,U:53,123,161` |
+| `scan_ip_protocols.py` | IP protocols | medium | authorized | yes | — | `-sO` |
+| `scan_mixed_tcp_udp.py` | Mixed TCP and UDP | medium | authorized | yes | — | `-sT -sU -p T:22,80,443,U:53,123,161` |
 | `scan_mixed_tcp_udp_common.py` | Mixed TCP and UDP | medium | authorized | yes | `T:22,80,443,8000,U:53,123,161,5353` | `-sS -sU --reason --open` |
 | `scan_sctp_cookie.py` | SCTP COOKIE | medium | authorized | yes | `80,2905,3868` | `-sZ` |
 | `scan_sctp_cookie_common.py` | SCTP COOKIE-ECHO scan | medium | authorized | yes | `80,443,3868,9899` | `-sZ --reason` |
@@ -426,23 +428,23 @@ and flexible scanners are additional.
 | `scan_tcp_connect.py` | TCP connect | low | authorized | no | `22,80,443,8000` | `-sT` |
 | `scan_tcp_database_ports.py` | Database ports | low | authorized | no | `523,1433,1521,27017,3306,5432,5984,6379,9042,11211` | `-sT` |
 | `scan_tcp_devops_ports.py` | DevOps ports | low | authorized | no | `2375,2376,6443,8001,8080,8443,9090,10250` | `-sT` |
-| `scan_tcp_fast.py` | Fast TCP | low | authorized | no | `—` | `-sT -F` |
+| `scan_tcp_fast.py` | Fast TCP | low | authorized | no | — | `-sT -F` |
 | `scan_tcp_file_ports.py` | File-service ports | low | authorized | no | `20,21,22,111,139,445,873,2049` | `-sT` |
 | `scan_tcp_fin.py` | TCP FIN | medium | authorized | yes | `22,80,443` | `-sF` |
-| `scan_tcp_full.py` | Full TCP | medium | authorized | no | `—` | `-sT -p-` |
+| `scan_tcp_full.py` | Full TCP | medium | authorized | no | — | `-sT -p-` |
 | `scan_tcp_mail_ports.py` | Mail ports | low | authorized | no | `25,110,143,465,587,993,995` | `-sT` |
 | `scan_tcp_maimon.py` | TCP Maimon | medium | authorized | yes | `22,80,443` | `-sM` |
-| `scan_tcp_no_ping.py` | Known-up TCP | medium | authorized | no | `—` | `-sT -Pn --top-ports 100` |
+| `scan_tcp_no_ping.py` | Known-up TCP | medium | authorized | no | — | `-sT -Pn --top-ports 100` |
 | `scan_tcp_null.py` | TCP NULL | medium | authorized | yes | `22,80,443` | `-sN` |
 | `scan_tcp_remote_desktop_ports.py` | Remote-display ports | low | authorized | no | `3389,5800,5900-5903,6000-6003` | `-sT` |
 | `scan_tcp_sequential.py` | Sequential TCP | low | authorized | no | `20-25,53,80,110,139,143,443,445` | `-sT -r` |
 | `scan_tcp_syn.py` | TCP SYN | medium | authorized | yes | `22,80,443,8000` | `-sS` |
-| `scan_tcp_top_10.py` | Top 10 TCP | low | authorized | no | `—` | `-sT --top-ports 10` |
-| `scan_tcp_top_100.py` | Top 100 TCP | low | authorized | no | `—` | `-sT --top-ports 100` |
-| `scan_tcp_top_1000.py` | Top 1000 TCP | medium | authorized | no | `—` | `-sT --top-ports 1000` |
+| `scan_tcp_top_10.py` | Top 10 TCP | low | authorized | no | — | `-sT --top-ports 10` |
+| `scan_tcp_top_100.py` | Top 100 TCP | low | authorized | no | — | `-sT --top-ports 100` |
+| `scan_tcp_top_1000.py` | Top 1000 TCP | medium | authorized | no | — | `-sT --top-ports 1000` |
 | `scan_tcp_web_ports.py` | Web ports | low | authorized | no | `80,443,3000,5000,8000,8008,8080,8081,8443,8888` | `-sT` |
 | `scan_tcp_xmas.py` | TCP Xmas | medium | authorized | yes | `22,80,443` | `-sX` |
-| `scan_udp_all_lab.py` | Full UDP loopback scan | high | loopback | yes | `—` | `-sU -p- --reason --open` |
+| `scan_udp_all_lab.py` | Full UDP loopback scan | high | loopback | yes | — | `-sU -p- --reason --open` |
 | `scan_udp_common.py` | Common UDP | medium | authorized | yes | `53,123,161,500,5353` | `-sU` |
 | `scan_udp_dhcp.py` | UDP DHCP ports | medium | private | yes | `67,68` | `-sU --reason --open` |
 | `scan_udp_dns.py` | UDP DNS ports | medium | authorized | yes | `53,5353` | `-sU --reason --open` |
@@ -454,10 +456,10 @@ and flexible scanners are additional.
 | `scan_udp_snmp.py` | UDP SNMP | medium | authorized | yes | `161,162` | `-sU --reason --open` |
 | `scan_udp_syslog.py` | UDP syslog | medium | authorized | yes | `514` | `-sU --reason --open` |
 | `scan_udp_tftp.py` | UDP TFTP | medium | authorized | yes | `69` | `-sU --reason --open` |
-| `scan_udp_top_100.py` | Top 100 UDP | medium | authorized | yes | `—` | `-sU --top-ports 100` |
-| `scan_udp_top_20.py` | Top 20 UDP | medium | authorized | yes | `—` | `-sU --top-ports 20` |
-| `scan_udp_top10_profile.py` | UDP top 10 | medium | authorized | yes | `—` | `-sU --top-ports 10 --reason --open` |
-| `scan_udp_top100_profile.py` | UDP top 100 | medium | authorized | yes | `—` | `-sU --top-ports 100 --reason --open` |
+| `scan_udp_top100_profile.py` | UDP top 100 | medium | authorized | yes | — | `-sU --top-ports 100 --reason --open` |
+| `scan_udp_top10_profile.py` | UDP top 10 | medium | authorized | yes | — | `-sU --top-ports 10 --reason --open` |
+| `scan_udp_top_100.py` | Top 100 UDP | medium | authorized | yes | — | `-sU --top-ports 100` |
+| `scan_udp_top_20.py` | Top 20 UDP | medium | authorized | yes | — | `-sU --top-ports 20` |
 | `scan_udp_version_common.py` | UDP service detection | medium | authorized | yes | `53,69,123,161,500,5353` | `-sU -sV --version-light --reason --open` |
 | `scan_udp_vpn.py` | UDP VPN ports | medium | authorized | yes | `500,1701,4500` | `-sU --reason --open` |
 

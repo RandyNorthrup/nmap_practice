@@ -1,146 +1,254 @@
-# Script explanations and modification guide
+# Script architecture and modification guide
 
-All scripts are small Python 3 programs using only standard library. They build an
-argument list and launch installed `nmap` executable without a shell. This works on
-Linux, macOS, and Windows and prevents target text from becoming shell commands.
+This suite has two scanner styles plus workflow and reporting tools. All use
+Python 3 standard library, pass Nmap arguments as a list, and never invoke a
+shell for scan execution. Linux, macOS, and Windows use the same Python code.
 
-## Shared flow
+Examples use `python3`; Windows PowerShell users replace it with `py`.
 
-Every scan script follows same five steps:
+## Choose the right script type
 
-1. Build command-line parser with readable `--help`.
-2. Validate target and require `--allow-public` outside local/private ranges.
-3. Validate ports as integers from 1 through 65535.
-4. Build Nmap argument list for one use case.
-5. Run Nmap and add `-oA PREFIX`, producing `.nmap`, `.gnmap`, and `.xml`.
+| Need | Use | Example |
+|---|---|---|
+| One repeatable technique | Focused profile script | `scan_tls_certificate.py` |
+| Ad hoc ports or basic service scan | Flexible scanner | `scan_ports.py`, `scan_services.py` |
+| Search hundreds of profiles | Catalog | `profile_catalog.py` |
+| Same profile across targets | Batch workflow | `batch_profile.py` |
+| Repeated baseline comparison | Watch workflow | `watch_profile.py` |
+| Convert saved XML | Report tools | `report_json.py`, `report_markdown.py` |
 
-Shared behavior lives in `scripts/common.py` and `scripts/profile_runner.py`.
-Profile definitions live in `scripts/profiles.py` and `scripts/profile_extras.py`.
-Each focused `scan_*.py` entry point maps to one registry key.
+Focused scripts are intentionally small. Their behavior comes from registry
+metadata, so 358 entry points share one validated execution engine.
 
-## What each file does
+## Profile execution flow
 
-### `profiles.py`, `profile_extras.py`, and `profile_runner.py`
+1. Entry script supplies a `PROFILE_NAME`.
+2. `profiles.py` resolves metadata from core rows and `profile_extras.py`.
+3. `profile_runner.py` builds shared CLI and enforces risk/scope rules.
+4. `common.py` validates target and ports, creates output prefix, and locates Nmap.
+5. Nmap runs with list arguments and `-oA`, producing `.nmap`, `.gnmap`, and `.xml`.
 
-Registry records category, title, explanation, exact Nmap flags, default ports,
-risk, scope, privilege expectation, and timing. Runner turns metadata into shared
-CLI, applies guardrails, then launches Nmap. Entry scripts intentionally stay
-small; their docstrings repeat use case, core flags, risk, scope, and edit point.
+No profile entry script should call `subprocess` directly.
 
-Scopes:
+## Profile metadata
 
-- `authorized`: private targets work directly; other targets require opt-in.
-- `private`: public opt-in cannot unlock it.
-- `loopback`: only localhost/loopback. All high-risk profiles use this scope.
+Each `ScanProfile` contains:
 
-Use `profile_catalog.py` instead of browsing hundreds of filenames manually.
+| Field | Meaning |
+|---|---|
+| `name` | Registry key and filename without `.py` |
+| `category` | Catalog grouping such as `tls`, `discovery`, or `inventory` |
+| `title` | Short user-facing name |
+| `description` | Help text explaining intended use |
+| `arguments` | Fixed Nmap argument tuple |
+| `default_ports` | Optional user-overridable port expression |
+| `scope` | `authorized`, `private`, or `loopback` |
+| `risk` | `low`, `medium`, or `high` |
+| `elevated` | Whether raw packets/Npcap may be required |
+| `timing` | Default `T0` through `T4`, or `None` |
 
-### `common.py`
+Registry rejects duplicate names and invalid risk/scope values. Extra high-risk
+rows are forced to loopback scope during registry construction.
 
-- Uses `ipaddress` to recognize loopback, private, and link-local targets.
-- Blocks public hostnames/IPs unless user supplies `--allow-public`.
-- Rejects option-like targets and malformed ports.
-- Finds `nmap` through `PATH` or optional `NMAP_BIN` environment variable.
-- Creates timestamped result prefixes and invokes Nmap without shell expansion.
+## Shared profile CLI
 
-To change default result directory, edit `result_prefix`. Keep `subprocess.run`
-using list arguments and `shell=False` default.
-
-### `lab.py` and `lab/server.py`
-
-`lab.py` launches synthetic server as detached Python process. Random health token
-proves process identity before stop, preventing stale PID file from killing an
-unrelated process. Server binds only to `127.0.0.1`.
-
-To change lab port:
-
-1. Change port in `configurations` inside `lab/server.py`.
-2. Update port summaries in `lab.py`, README, and labs.
-3. Update `tests/test_lab.py`.
-4. Run `python3 tests/run_tests.py` (or `py ...` on Windows).
-
-### `scan_discovery.py`
-
-Uses `-sn`: host discovery without port scan. `--reason` explains online decision.
-Change `DEFAULT_TIMING` only after reading Nmap timing documentation.
-
-### `scan_ports.py`
-
-Defaults to unprivileged TCP connect scan (`-sT`) and top 100 ports. `--syn` uses
-raw-packet SYN scan (`-sS`). `--show-closed` removes output filter.
-
-To change default breadth, edit `DEFAULT_TOP_PORTS`.
-
-### `scan_services.py`
-
-Adds `-sV`. Default `--version-light` sends fewer probes; `--version-all` sends
-every registered version probe. Change default breadth through `DEFAULT_TOP_PORTS`.
-
-### `scan_safe_scripts.py`
-
-Runs NSE expression `default and safe`, plus timeouts. Expression means script
-must be in both categories. Keep real-system default conservative.
-
-To test another category in loopback lab, copy this file, rename it, change
-`DEFAULT_SCRIPT_EXPRESSION`, update module description, and add wrapper test.
-
-### `scan_udp.py`
-
-Uses `-sU` and intentionally narrow `DEFAULT_PORTS`. Silence often produces
-`open|filtered`; UDP needs more time and usually elevated privileges.
-
-### `scan_web.py`
-
-Checks common web ports with service detection, `http-title`, and `http-headers`.
-Edit `DEFAULT_WEB_PORTS` for your dev stack. Add script names only after running
-`nmap --script-help SCRIPT_NAME` and reviewing safety/category.
-
-### `scan_route.py`
-
-Combines `-sn` and `--traceroute`, so it traces path without port scan. Add `-6`
-to its `nmap_args` list for IPv6-only practice.
-
-### `scan_os.py`
-
-Uses `-O`, `--osscan-limit`, and one retry. This keeps fingerprinting bounded.
-Requires raw-packet capability and enough port-state evidence for useful guesses.
-
-### `compare_results.py`
-
-Parses Nmap XML with `xml.etree.ElementTree`. Compares address, protocol, port,
-state, service, and version. To compare another field, add it to `PortFinding`,
-populate it in `parse_report`, then add tests in `test_compare_results.py`.
-
-## Add a new profile use case
-
-1. Add registry row with unique `scan_*` name.
-2. Set precise category, description, argument tuple, ports, risk, and scope.
-3. Copy closest profile entry script; change docstring and `PROFILE_NAME`.
-4. Keep Nmap flags as tuple/list, never one shell command string.
-5. Use `private` or `loopback` for broader/higher-impact profiles.
-6. Run full test suite; it verifies wrapper, registry, dry run, and safety rules.
-7. Smoke-test new profile only against loopback lab first.
-
-Example modification in `scan_web.py`:
-
-```python
-DEFAULT_WEB_PORTS = "80,443,3000,8000,8080"
-HTTP_SCRIPTS = "http-title,http-headers,http-server-header"
-```
-
-Before adding `http-server-header`, inspect it:
+Run any profile with `--help` before editing it:
 
 ```bash
-nmap --script-help http-server-header
+python3 scripts/scan_http_headers.py --help
+python3 scripts/scan_http_headers.py 127.0.0.1 --ports 8000 --dry-run
 ```
 
-## Test design
+| Option | Behavior |
+|---|---|
+| `TARGET` | Required IP, CIDR, or hostname |
+| `--output PREFIX` | Override timestamped output prefix |
+| `--allow-public` | Opt into non-private target; does not grant authorization |
+| `--ports LIST` | Override ports only when profile defines `default_ports` |
+| `--timing T0..T4` | Override timing; `T5` intentionally unavailable |
+| `--no-dns` | Add `-n` and disable reverse DNS |
+| `--skip-host-discovery` | Add `-Pn` for known-up target |
+| `--script-args TEXT` | Add NSE arguments; rejected for non-NSE profiles |
+| `--extra-arg OPTION` | Append one advanced Nmap argument |
+| `-v`, `-vv`, `-vvv` | Increase Nmap verbosity, capped at three |
+| `--dry-run` | Validate and print exact command without starting Nmap |
 
-- `test_common.py`: target and port safety.
-- `test_profiles.py`: every registry row, wrapper, dry run, and risk/scope lock.
-- `test_nmap_xml.py`: shared report parser.
-- `test_workflows.py`: catalog, exports, batch, watch, and rescan utilities.
-- `test_wrappers.py`: command construction using mock Nmap; no network traffic.
-- `test_compare_results.py`: XML parsing and changes.
-- `test_lab.py`: real loopback TCP health, UDP response, and clean shutdown.
-- `run_tests.py`: compiles all Python then runs all tests cross-platform.
+Advanced arguments cannot control target sources, Nmap data directories, resume
+files, or output options. Those stay under runner control. For option/value pairs,
+repeat the option:
+
+```bash
+python3 scripts/scan_tcp_top_100.py 127.0.0.1 \
+  --extra-arg=--max-retries --extra-arg=2 --dry-run
+```
+
+Use `--extra-arg` sparingly. It changes traffic beyond documented profile.
+
+## Scope and risk enforcement
+
+| Scope | Allowed target behavior |
+|---|---|
+| `authorized` | Private/local works directly; other targets need `--allow-public` |
+| `private` | Only private, link-local, or loopback; opt-in cannot unlock public |
+| `loopback` | Only `localhost`, `127.0.0.0/8`, or `::1` |
+
+| Risk | Intended use |
+|---|---|
+| `low` | Narrow discovery or information retrieval |
+| `medium` | Broader, raw-packet, enumeration, or higher-traffic work |
+| `high` | Loopback-only packet, intrusive, or vulnerability experiments |
+
+Risk label describes traffic, not authorization. Even low-risk scans require
+permission.
+
+## File map
+
+| Path | Responsibility |
+|---|---|
+| `scripts/common.py` | Target/port validation, output prefix, Nmap process |
+| `scripts/profile_runner.py` | Shared profile CLI and scope enforcement |
+| `scripts/profiles.py` | Core profiles, generated NSE families, registry merge |
+| `scripts/profile_extras.py` | Additional explicit profile data |
+| `scripts/scan_*.py` | One-purpose entry scripts |
+| `scripts/profile_catalog.py` | Runtime search/filter tool |
+| `scripts/generate_profile_catalog.py` | Rebuild committed Markdown catalog |
+| `scripts/nmap_xml.py` | Shared immutable XML model and parser |
+| `scripts/report_*.py` | XML validation, extraction, and conversion |
+| `scripts/batch_profile.py` | Sequential target-file workflow |
+| `scripts/watch_profile.py` | Finite repeated scans and diffs |
+| `scripts/rescan_open_ports.py` | Focused TCP/UDP rescan from XML |
+| `scripts/lab.py`, `lab/server.py` | Loopback-only synthetic services |
+
+## Reading a focused script
+
+`scan_http_drupal_loopback.py` is representative:
+
+- Docstring states use case, core flags, risk, and scope.
+- `PROFILE_NAME` points to matching registry row.
+- Runner supplies all options and enforcement.
+- Profile is high-risk and therefore loopback-only.
+- Local lab is not Drupal, so script may correctly return no Drupal findings.
+
+Inspect without traffic:
+
+```bash
+python3 scripts/scan_http_drupal_loopback.py --help
+python3 scripts/scan_http_drupal_loopback.py 127.0.0.1 --dry-run
+```
+
+## Modify an existing profile
+
+1. Find source row:
+
+   ```bash
+   rg 'scan_http_drupal_loopback' scripts/profiles.py scripts/profile_extras.py
+   ```
+
+2. Edit metadata in its source file.
+3. Update entry script docstring if title, flags, risk, or scope changed.
+4. Rebuild catalog:
+
+   ```bash
+   python3 scripts/generate_profile_catalog.py --output docs/profile-catalog.md
+   ```
+
+5. Verify dry run and full suite:
+
+   ```bash
+   python3 scripts/scan_http_drupal_loopback.py 127.0.0.1 --dry-run
+   python3 tests/run_tests.py
+   ```
+
+6. Smoke-test against loopback lab when profile matches lab service.
+
+## Add a new profile
+
+Add data row to `EXTRA_PROFILE_DATA` in `profile_extras.py`. Example:
+
+```python
+{
+    "name": "scan_http_practice_metadata",
+    "category": "web",
+    "title": "Practice HTTP metadata",
+    "description": "Read title and server headers from loopback practice HTTP.",
+    "arguments": [
+        "-sT", "-sV", "--version-light",
+        "--script", "http-title,http-server-header",
+        "--script-timeout", "30s", "--open",
+    ],
+    "default_ports": "8000",
+    "scope": "loopback",
+    "risk": "low",
+    "elevated": False,
+    "timing": "T3",
+},
+```
+
+Create matching entry script:
+
+```python
+#!/usr/bin/env python3
+"""Practice HTTP metadata.
+
+Use case: read title and server headers from loopback practice HTTP.
+Risk: low. Scope: loopback.
+"""
+
+from profile_runner import run_named_profile
+
+
+PROFILE_NAME = "scan_http_practice_metadata"
+
+
+if __name__ == "__main__":
+    raise SystemExit(run_named_profile(PROFILE_NAME))
+```
+
+Then regenerate catalog and run tests. Tests require every registry row to have
+matching entry file and matching `PROFILE_NAME`.
+
+## Add or modify report fields
+
+`nmap_xml.py` is canonical parser. When adding XML data:
+
+1. Add field to relevant immutable dataclass.
+2. Populate field in `parse_report`.
+3. Update `to_dict` behavior if needed.
+4. Add fixture data and assertions in `test_nmap_xml.py`.
+5. Update relevant `report_*.py` and workflow tests.
+
+Do not use separate XML parsers for each report.
+
+## Modify local lab
+
+1. Change service/port in `lab/server.py`.
+2. Update summaries in `scripts/lab.py` and README.
+3. Update `tests/test_lab.py`.
+4. Update affected practice labs.
+5. Run full suite and verify clean shutdown.
+
+Lab health token proves process identity before stop, preventing stale PID state
+from signaling unrelated processes.
+
+## Test coverage
+
+- `test_common.py`: targets, port expressions, public opt-in.
+- `test_profiles.py`: registry count, wrappers, dry runs, scope/risk locks.
+- `test_nmap_xml.py`: canonical XML parser.
+- `test_workflows.py`: catalog, batch, watch, reports, rescan.
+- `test_docs.py`: documentation links, script references, catalog freshness.
+- `test_wrappers.py`: flexible scanners with mock Nmap.
+- `test_compare_results.py`: XML difference logic.
+- `test_lab.py`: live loopback TCP/UDP lifecycle.
+
+Run:
+
+```bash
+python3 tests/run_tests.py
+```
+
+Windows:
+
+```powershell
+py tests/run_tests.py
+```

@@ -1,60 +1,111 @@
-# Nmap cheat sheet
+# Nmap and practice-suite cheat sheet
 
-## Core commands
+Examples use `python3`; Windows PowerShell users use `py`.
 
-| Goal | Command | Main result |
+## Start here
+
+| Goal | Suite command |
+|---|---|
+| Search profiles | `python3 scripts/profile_catalog.py --search tls` |
+| List category | `python3 scripts/profile_catalog.py --category discovery` |
+| Show high-risk loopback profiles | `python3 scripts/profile_catalog.py --risk high` |
+| Inspect without traffic | `python3 scripts/scan_tcp_top_100.py 127.0.0.1 --dry-run` |
+| Start/stop lab | `python3 scripts/lab.py start` / `python3 scripts/lab.py stop` |
+| Run tests | `python3 tests/run_tests.py` |
+
+## Common Nmap tasks and profiles
+
+| Goal | Raw Nmap | Focused profile |
 |---|---|---|
-| Check installation | `nmap --version` | Version and compiled features |
-| Discover hosts | `nmap -sn 192.168.1.0/24` | Hosts Nmap considers up |
-| Common TCP ports | `nmap -sT --top-ports 100 HOST` | Open, closed, or filtered TCP ports |
-| Chosen TCP ports | `nmap -sT -p 22,80,443 HOST` | State of listed ports |
-| All TCP ports | `nmap -sT -p- HOST` | Ports 1 through 65535; potentially slow |
-| Detect services | `nmap -sT -sV --version-light HOST` | Service guesses and banner details |
-| Explain states | `nmap -sT --reason HOST` | Packet-level reason for each state |
-| Safe/default NSE | `nmap -sT -sV --script "default and safe" HOST` | Low-risk script findings |
-| UDP ports | `nmap -sU -p 53,123,161 HOST` (elevated terminal) | UDP port states; often slow/ambiguous |
-| Save all formats | `nmap -oA results/name HOST` | `.nmap`, `.gnmap`, and `.xml` files |
+| Host discovery | `nmap -sn TARGET` | `scan_discover_default.py` |
+| ARP discovery | `nmap -sn -PR CIDR` | `scan_discovery_arp.py` |
+| Top 100 TCP | `nmap -sT --top-ports 100 TARGET` | `scan_tcp_top_100.py` |
+| Selected TCP | `nmap -sT -p 22,80,443 TARGET` | `scan_tcp_connect.py --ports 22,80,443` |
+| SYN scan | `nmap -sS -p 22,80,443 TARGET` | `scan_tcp_syn.py --ports 22,80,443` |
+| Common UDP | `nmap -sU -p 53,123,161 TARGET` | `scan_udp_common.py --ports 53,123,161` |
+| Service detection | `nmap -sT -sV TARGET` | `scan_service_default.py` |
+| OS fingerprint | `nmap -O TARGET` | `scan_os_fingerprint.py` |
+| TLS certificate | `nmap --script ssl-cert -p 443 TARGET` | `scan_tls_certificate.py --ports 443` |
+| HTTP headers | `nmap --script http-headers -p 80 TARGET` | `scan_http_headers.py --ports 80` |
+| Save all formats | `nmap -oA PREFIX TARGET` | Every suite scanner does this |
 
-Replace `HOST` only with an authorized target.
+Replace `TARGET` only with authorized target. Raw-packet commands may need
+elevation.
 
-## Useful options
+## Shared profile options
 
 | Option | Meaning |
 |---|---|
-| `-sn` | Host discovery only; no port scan |
-| `-sT` | TCP connect scan; works without root |
-| `-sS` | TCP SYN scan; normally needs elevated privileges |
-| `-sU` | UDP scan; normally needs elevated privileges |
-| `-p 80,443` | Scan exact ports |
-| `-p-` | Scan all TCP ports |
-| `--top-ports 100` | Scan Nmap's 100 most common ports |
-| `-sV` | Probe open ports to identify services |
-| `-O` | OS fingerprinting; root and permission recommended |
-| `--reason` | Explain why Nmap assigned each state |
-| `--open` | Display only hosts with open or possibly open ports |
-| `-Pn` | Skip host discovery and treat target as online |
-| `-T3` | Normal timing; kit default |
-| `-v` / `-vv` | More progress and detail |
-| `-oA PREFIX` | Save normal, grepable, and XML reports |
+| `TARGET` | Authorized IP, CIDR, or hostname |
+| `--output PREFIX` | Choose `.nmap`/`.gnmap`/`.xml` output prefix |
+| `--allow-public` | Explicit non-private opt-in; not permission |
+| `--ports LIST` | Override profile default ports when supported |
+| `--timing T0..T4` | Override timing template |
+| `--no-dns` | Disable reverse DNS (`-n`) |
+| `--skip-host-discovery` | Treat target as online (`-Pn`) |
+| `--script-args TEXT` | NSE arguments; NSE profiles only |
+| `--extra-arg OPTION` | Add one advanced option; repeat for value |
+| `-v`, `-vv`, `-vvv` | More verbosity |
+| `--dry-run` | Validate and print command without scan |
+
+## Nmap scan options
+
+| Option | Meaning |
+|---|---|
+| `-sL` | List targets without discovery/port scan |
+| `-sn` | Host discovery only |
+| `-sT` | TCP connect scan; unprivileged |
+| `-sS` | TCP SYN scan; usually elevated |
+| `-sA` | TCP ACK firewall-state scan |
+| `-sU` | UDP scan; usually elevated |
+| `-sY` / `-sZ` | SCTP INIT / COOKIE-ECHO scan |
+| `-sO` | IP protocol scan |
+| `-p 80,443` | Exact ports |
+| `-p-` | All ports 1–65535 |
+| `--top-ports 100` | Nmap frequency-ranked ports |
+| `-sV` | Service/version probes |
+| `--version-light` | Fewer service probes |
+| `-O` | OS fingerprinting |
+| `--script NAME` | Run NSE script/expression |
+| `--reason` | Explain state decision |
+| `--open` | Show open/possibly-open results only |
+| `-Pn` | Skip host discovery |
+| `-n` / `-R` | Disable / force reverse DNS |
+| `-T3` | Normal timing; suite default |
+| `-oA PREFIX` | Normal, grepable, and XML outputs |
 
 ## Port states
 
 | State | Plain meaning |
 |---|---|
-| `open` | Application accepted or responded to Nmap's probe |
-| `closed` | Host replied, but no application listens on that port |
-| `filtered` | Firewall or packet loss prevented a clear answer |
-| `open|filtered` | Common with UDP: no reply cannot distinguish open from blocked |
-| `unfiltered` | Port is reachable, but scan type cannot tell open from closed |
+| `open` | Application responded or accepted connection |
+| `closed` | Host replied but no listener on port |
+| `filtered` | Firewall or packet loss blocked clear answer |
+| `open|filtered` | Common UDP ambiguity: silence has multiple causes |
+| `unfiltered` | Reachable, but scan type cannot decide open/closed |
+| `closed|filtered` | Scan type cannot separate closed from filtered |
 
-Service names are educated guesses based on ports and probes. Verify important
-findings with application owners and configuration data.
+Service names are guesses from ports and probes. Verify important results with
+configuration owners.
+
+## Output and reports
+
+| Need | Command |
+|---|---|
+| Validate XML | `python3 scripts/report_validate.py FILE.xml` |
+| Human summary | `python3 scripts/report_summary.py FILE.xml` |
+| Open ports | `python3 scripts/report_open_ports.py FILE.xml` |
+| JSON | `python3 scripts/report_json.py FILE.xml --output report.json` |
+| CSV | `python3 scripts/report_csv.py FILE.xml --output report.csv` |
+| Markdown | `python3 scripts/report_markdown.py FILE.xml --output report.md` |
+| Compare | `python3 scripts/compare_results.py OLD.xml NEW.xml` |
+| Focused rescan | `python3 scripts/rescan_open_ports.py FILE.xml --dry-run` |
 
 ## CIDR reminders
 
-| CIDR | Addresses | Typical use |
+| CIDR | IPv4 addresses | Practice advice |
 |---|---:|---|
-| `/32` | 1 | One IPv4 host |
-| `/30` | 4 | Very small network |
-| `/24` | 256 | Common home LAN subnet |
+| `/32` | 1 | Best starting scope |
+| `/30` | 4 | Tiny network |
+| `/24` | 256 | Typical LAN; discovery first |
 | `/16` | 65,536 | Large; do not scan casually |
