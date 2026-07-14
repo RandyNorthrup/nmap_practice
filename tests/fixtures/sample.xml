@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nmaprun scanner="nmap" args="nmap -sV 127.0.0.1" start="1" startstr="sample" version="7.95">
+  <host>
+    <status state="up" reason="localhost-response"/>
+    <address addr="127.0.0.1" addrtype="ipv4"/>
+    <hostnames><hostname name="localhost" type="PTR"/></hostnames>
+    <ports>
+      <port protocol="tcp" portid="22">
+        <state state="open" reason="syn-ack"/>
+        <service name="ssh" product="PracticeSSH" version="1.0"/>
+        <script id="ssh-hostkey" output="sample key"/>
+      </port>
+      <port protocol="tcp" portid="8000">
+        <state state="open" reason="syn-ack"/>
+        <service name="http" product="PracticeHTTP" version="1.0"/>
+        <script id="http-title" output="Practice page"/>
+      </port>
+      <port protocol="udp" portid="5353">
+        <state state="open" reason="udp-response"/>
+        <service name="zeroconf" product="PracticeUDP" version="1.0"/>
+      </port>
+    </ports>
+    <hostscript><script id="clock-skew" output="mean: 0s"/></hostscript>
+  </host>
+</nmaprun>
