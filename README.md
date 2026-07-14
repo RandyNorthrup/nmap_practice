@@ -121,3 +121,7 @@ python3 tests/run_tests.py
 Tests compile every Python file, dry-build every registered profile, enforce
 scope/risk locks, verify every entry script, test reporting/batch/watch/rescan,
 compare XML, and start/verify/stop local TCP/UDP lab. `make test` is optional.
+
+## License
+
+Released under the [MIT License](LICENSE).
